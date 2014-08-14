@@ -3,12 +3,18 @@
     <title>Test Speech Web API</title>
   </head>
   <body>
+  <style>
+.highlight
+{
+background-color:yellow;
+}
+</style>
     <h1>Test Speech Web API</h1>
     <form name="speakform" action="" style="float: left; width: 48%;">
 
       <fieldset>
         <legend>Text</legend>
-        <textarea style="width: 100%;" rows="6" name="text">Hello world!</textarea>
+        <input type="text" name="text" value="hello world this is web speech api testing" style="width: 100%;"></input>
       </fieldset>
       <fieldset>
         <legend>Tweak voice attributes</legend>
@@ -60,6 +66,28 @@
     eventEntry.innerHTML = '<strong>' + event.type + '</strong> offset: ' + event.charIndex + ' time: ' + event.elapsedTime;
     eventLog.appendChild(eventEntry);
     eventEntry.scrollIntoView();
+
+    //code to highlight the word being spoken
+    var inputArea = document.forms['speakform'].text;
+    var original_string = inputArea.value;
+    if(event.type === 'endEvent' || event.type === 'start'){ //in chrome and safari, replace the 'endEvent' with 'end'
+      inputArea.focus();     //input needs to focussed at the start, in case of firefox
+      inputArea.setSelectionRange(0,0);
+      return;
+    }
+    if(event.charIndex === original_string.length) //end of sentence event
+      return;
+      
+    var nextDelimiterIndex = original_string.substring(event.charIndex).indexOf(' ');
+    if(parseInt(nextDelimiterIndex) === -1){
+      nextDelimiterIndex = original_string.length;
+    }
+    else{
+      nextDelimiterIndex += event.charIndex;
+    }
+    var wordSpoken = original_string.substring(event.charIndex,nextDelimiterIndex);
+    inputArea.setSelectionRange(event.charIndex, nextDelimiterIndex);
+    console.log(wordSpoken);
   }
 
   var utterance = null;
@@ -72,13 +100,22 @@
     utterance.rate = form.rate.value;
     utterance.pitch = form.pitch.value;
     
-    utterance.addEventListener('start', eventHandler);
-    utterance.addEventListener('boundary', eventHandler);
+    utterance.onstart = eventHandler;
+    utterance.onend = eventHandler;
+    utterance.onmark = eventHandler;
+    utterance.onpause = eventHandler;
+    utterance.onpause = eventHandler;
+    utterance.onerror = eventHandler;
+    utterance.onboundary = eventHandler;
+	
+  /*utterance.addEventListener('start', eventHandler);
+	  utterance.addEventListener('boundary', eventHandler);
     utterance.addEventListener('end', eventHandler);
     utterance.addEventListener('pause', eventHandler);
     utterance.addEventListener('resume', eventHandler);
+   */
    
-    console.log(utterance.voice);
+   // console.log(utterance.voice);
  
     window.speechSynthesis.speak(utterance);
   }
